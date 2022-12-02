@@ -1,0 +1,81 @@
+<div style="height:600px;border:1px solid black"></div>
+<canvas id="app" width="1000" height="1000"></canvas>
+<script>
+    function interpolate(from, to, cb) {
+        console.log("will interpolate",from, to, cb)
+        const distX = to.x - from.x;
+        const distY = to.y - from.y;
+        const dist = Math.hypot(distX, distY);
+        const stepX = distX / dist;
+        const stepY = distY / dist; 
+        let x = from.x;
+        let y = from.y;
+        for (let a = 0; a < dist; a += 1) {
+            cb({x, y});
+            x += stepX;
+            y += stepY;
+        }
+    }
+    
+    class Controller {
+        constructor(el) {
+            this.el = el;
+            this.start = null;
+            this.last = null;
+            this.handlers = {};
+        }
+        init() {
+            this.on('mousedown', e => {
+                this.down = true;
+                this.start = e;
+                this.last = e;
+            });
+            this.on('mousemove', e => {
+                if (!this.down) return;
+                interpolate(this.last, e, e => {
+                    this.dispatch({ ...e, type: 'usermove:drag', a: 'xx'});
+                });
+                this.last = e;
+            });
+
+            this.on('mouseup', e => {
+                this.down = false;
+
+            });
+        }
+        dispatch(e) {
+            if (Object.hasOwn(this.handlers, e.type)) {
+                this.handlers[e.type].forEach(handler => handler(e));
+            }
+        }
+        on(eventName, handler) {
+            this.handlers[eventName] || (this.handlers[eventName] = []).push(handler); 
+            this.el.addEventListener(eventName, e => {
+                const boundingRect = this.el.getBoundingClientRect();
+                const x = e.clientX - boundingRect.x;
+                const y = e.clientY - boundingRect.y;
+                this.dispatch({ type: e.type, x, y, down: this.down });
+            });
+        }
+
+    }
+
+    const canvas = document.getElementById('app');
+    const ctx = canvas.getContext('2d');
+
+    function render() {
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    render();
+
+    const controller = new Controller(canvas);
+
+    controller.init();
+
+    controller.on('usermove:drag', e => {
+        ctx.fillStyle = 'yellow';
+        ctx.fillRect(e.x, e.y, 2, 2);
+    });
+
+</script>
