@@ -1,8 +1,8 @@
 <div style="height:600px;border:1px solid black"></div>
 <canvas id="app" width="1000" height="1000"></canvas>
 <script>
+    window.mode = 'draw';
     function interpolate(from, to, cb) {
-        console.log("will interpolate",from, to, cb)
         const distX = to.x - from.x;
         const distY = to.y - from.y;
         const dist = Math.hypot(distX, distY);
@@ -20,7 +20,7 @@
     class Controller {
         constructor(el, opts = {}) {
             this.el = el;
-            this.start = null;
+            this.start = {x: 0, y: 0};
             this.last = null;
             this.handlers = {};
             this.opts = opts;
@@ -37,7 +37,13 @@
             this.on('pointermove', e => {
                 if (!this.down) return;
                 interpolate(this.last, e, e => {
-                    this.dispatch({ ...e, type: 'usermove:drag'});
+                    const delta = {
+                        x: e.x - this.start.x,
+                        y: e.y - this.start.y,
+                    };
+                    delta.angle = Math.atan2(delta.y, delta.x);
+                    delta.distance = Math.hypot(delta.x, delta.y);
+                    this.dispatch({ ...e, type: 'usermove:drag', start: {...this.start}, delta});
                 });
                 this.last = e;
             });
@@ -55,7 +61,7 @@
             const boundingRect = this.el.getBoundingClientRect();
             const x = e.clientX - boundingRect.x;
             const y = e.clientY - boundingRect.y;
-            const transformedEvent = { type: e.type, x, y, down: this.down, domEvent: e };
+            const transformedEvent = { type: e.type, x, y, down: this.down, domEvent: e, start: { ...this.start} };
             if (this.opts.transformEvent) this.opts.transformEvent(transformedEvent);
             return transformedEvent;
         }
@@ -82,7 +88,7 @@
 
     const controller = new Controller(canvas, {
         transformEvent(e) {
-            const factor = 20;
+            const factor = 1;
             e.x = Math.floor(e.x / factor) * factor;
             e.y = Math.floor(e.y / factor) * factor;
         }
@@ -90,8 +96,9 @@
 
     controller.init();
 
-    controller.on('click', e => {
-        console.log("click")
+    controller.on('pointerdown', e => {
+        ctx.fillStyle = 'red';
+        ctx.fillRect(e.x, e.y, 6, 6);
     });
     controller.on('click', e => {
         console.log("click 2")
@@ -99,8 +106,16 @@
 
 
     controller.on('usermove:drag', e => {
-        ctx.fillStyle = 'yellow';
-        ctx.fillRect(e.x, e.y, 2, 2);
+        if (window.mode == 'draw') {
+            ctx.fillStyle = 'yellow';
+            ctx.fillRect(e.x, e.y, 2, 2);
+        } else if (window.mode == 'move') {
+            const delta = e.delta;
+            ctx.fillStyle = 'red';
+            ctx.fillRect(e.start.x + Math.cos(delta.angle) * delta.distance, e.start.y + Math.sin(delta.angle) * delta.distance, 2, 2);
+
+
+        }
     });
 
 </script>
