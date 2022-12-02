@@ -16,13 +16,14 @@
             y += stepY;
         }
     }
-    
+
     class Controller {
-        constructor(el) {
+        constructor(el, opts = {}) {
             this.el = el;
             this.start = null;
             this.last = null;
             this.handlers = {};
+            this.opts = opts;
         }
         init() {
             this.on('mousedown', e => {
@@ -48,13 +49,18 @@
                 this.handlers[e.type].forEach(handler => handler(e));
             }
         }
+        mapEvent(e) {
+            const boundingRect = this.el.getBoundingClientRect();
+            const x = e.clientX - boundingRect.x;
+            const y = e.clientY - boundingRect.y;
+            const transformedEvent = { type: e.type, x, y, down: this.down };
+            if (this.opts.transformEvent) this.opts.transformEvent(transformedEvent);
+            return transformedEvent;
+        }
         on(eventName, handler) {
             this.handlers[eventName] || (this.handlers[eventName] = []).push(handler); 
             this.el.addEventListener(eventName, e => {
-                const boundingRect = this.el.getBoundingClientRect();
-                const x = e.clientX - boundingRect.x;
-                const y = e.clientY - boundingRect.y;
-                this.dispatch({ type: e.type, x, y, down: this.down });
+                this.dispatch(this.mapEvent(e));
             });
         }
 
@@ -69,7 +75,13 @@
 
     render();
 
-    const controller = new Controller(canvas);
+    const controller = new Controller(canvas, {
+        transformEvent(e) {
+            const factor = 20;
+            e.x = Math.floor(e.x / factor) * factor;
+            e.y = Math.floor(e.y / factor) * factor;
+        }
+    });
 
     controller.init();
 
