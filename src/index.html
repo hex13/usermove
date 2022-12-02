@@ -26,20 +26,22 @@
             this.opts = opts;
         }
         init() {
-            this.on('mousedown', e => {
+            this.on('touchmove', e => {
+                e.domEvent.preventDefault();
+            });
+            this.on('pointerdown', e => {
                 this.down = true;
                 this.start = e;
                 this.last = e;
             });
-            this.on('mousemove', e => {
+            this.on('pointermove', e => {
                 if (!this.down) return;
                 interpolate(this.last, e, e => {
-                    this.dispatch({ ...e, type: 'usermove:drag', a: 'xx'});
+                    this.dispatch({ ...e, type: 'usermove:drag'});
                 });
                 this.last = e;
             });
-
-            this.on('mouseup', e => {
+            this.on('pointerup', e => {
                 this.down = false;
 
             });
@@ -53,7 +55,7 @@
             const boundingRect = this.el.getBoundingClientRect();
             const x = e.clientX - boundingRect.x;
             const y = e.clientY - boundingRect.y;
-            const transformedEvent = { type: e.type, x, y, down: this.down };
+            const transformedEvent = { type: e.type, x, y, down: this.down, domEvent: e };
             if (this.opts.transformEvent) this.opts.transformEvent(transformedEvent);
             return transformedEvent;
         }
