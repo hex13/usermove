@@ -58,9 +58,14 @@
                     });
                 } else if (pointerCount == 2) {
                     const [a, b] = Object.values(this.pointers);
+
                     const originalDistance = Math.hypot(a.start.x - b.start.x, a.start.y - b.start.y);
                     const currentDistance = Math.hypot(a.current.x - b.current.x, a.current.y - b.current.y);
-                    this.dispatch({type: 'usermove:zoom', distance: currentDistance - originalDistance})
+
+                    const originalRotation = Math.atan2(a.start.y - b.start.y, a.start.x - b.start.x); 
+                    const currentRotation = Math.atan2(a.current.y - b.current.y, a.current.x - b.current.x); 
+
+                    this.dispatch({type: 'usermove:gesture', distance: currentDistance - originalDistance, rotation: currentRotation - originalRotation})
                 }
                 pointerInfo.last = e;
             });
@@ -137,8 +142,8 @@
         }
     });
 
-    controller.on('usermove:zoom', e => {
-        label2.innerText = e.distance;
+    controller.on('usermove:gesture', e => {
+        label2.innerText = e.distance.toFixed(2) + ", ROT  " + e.rotation.toFixed(2);
     });
 
 </script>
