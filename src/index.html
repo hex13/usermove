@@ -43,7 +43,9 @@
             this.on('pointermove', e => {
                 const pointerInfo = this.pointers[e.domEvent.pointerId];
                 const pointerCount = Object.keys(this.pointers).length;
+                pointerInfo.current = e;
                 if (!pointerInfo.isDown) return;
+
                 if (pointerCount == 1) {
                     interpolate(pointerInfo.last, e, interpolated => {
                         const delta = {
@@ -56,8 +58,9 @@
                     });
                 } else if (pointerCount == 2) {
                     const [a, b] = Object.values(this.pointers);
-                    const distance = a.x + ", " + a.y + "; " + b.x + ", " + b.y + " DIST: " + Math.hypot(a.x - b.x, a.y - b.y);
-                    label2.innerText = distance;
+                    const originalDistance = Math.hypot(a.start.x - b.start.x, a.start.y - b.start.y);
+                    const currentDistance = Math.hypot(a.current.x - b.current.x, a.current.y - b.current.y);
+                    this.dispatch({type: 'usermove:zoom', distance: currentDistance - originalDistance})
                 }
                 pointerInfo.last = e;
             });
@@ -132,6 +135,10 @@
 
             console.log("DIST", delta.distance)
         }
+    });
+
+    controller.on('usermove:zoom', e => {
+        label2.innerText = e.distance;
     });
 
 </script>
