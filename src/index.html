@@ -8,7 +8,7 @@
     const label = document.getElementById('text');
     const label2 = document.getElementById('text2');
     function updateLabel(ids) {
-        label.innerText = Object.entries(ids).map(entry => entry[0] + "(" + entry[1] + ")").join(', ');
+        // label.innerText = Object.entries(ids).map(entry => entry[0] + "(" + entry[1] + ")").join(', ');
     }
     function interpolate(from, to, cb) {
         const distX = to.x - from.x;
@@ -28,8 +28,6 @@
     class Controller {
         constructor(el, opts = {}) {
             this.el = el;
-            this.start = {x: 0, y: 0};
-            this.last = null;
             this.handlers = {};
             this.opts = opts;
             this.pointers = {};
@@ -39,36 +37,31 @@
                 e.domEvent.preventDefault();
             });
             this.on('pointerdown', e => {
-                this.pointers[e.domEvent.pointerId] = e;
-                this.down = true;
-                this.start = e;
-                this.last = e;
+                this.pointers[e.domEvent.pointerId] = {start: e, last: e, isDown: true};
                 updateLabel(this.pointers);
             });
             this.on('pointermove', e => {
-                if (!this.down) return;
-                this.pointers[e.domEvent.pointerId] = e;
+                const pointerInfo = this.pointers[e.domEvent.pointerId];
                 const pointerCount = Object.keys(this.pointers).length;
+                if (!pointerInfo.isDown) return;
                 if (pointerCount == 1) {
-                    interpolate(this.last, e, interpolated => {
+                    interpolate(pointerInfo.last, e, interpolated => {
                         const delta = {
-                            x: interpolated.x - this.start.x,
-                            y: interpolated.y - this.start.y,
+                            x: interpolated.x - pointerInfo.start.x,
+                            y: interpolated.y - pointerInfo.start.y,
                         };
                         delta.angle = Math.atan2(delta.y, delta.x);
                         delta.distance = Math.hypot(delta.x, delta.y);
-                        this.dispatch({ ...interpolated, type: 'usermove:drag', start: {...this.start}, delta, isPrimary: e.isPrimary});
+                        this.dispatch({ ...interpolated, type: 'usermove:drag', start: {...pointerInfo.start}, delta, isPrimary: e.isPrimary});
                     });
-                    this.last = e;
                 } else if (pointerCount == 2) {
                     const [a, b] = Object.values(this.pointers);
                     const distance = a.x + ", " + a.y + "; " + b.x + ", " + b.y + " DIST: " + Math.hypot(a.x - b.x, a.y - b.y);
                     label2.innerText = distance;
                 }
-
+                pointerInfo.last = e;
             });
             this.on('pointerup', e => {
-                this.down = false;
                 delete this.pointers[e.domEvent.pointerId];
                 updateLabel(this.pointers);
             });
@@ -128,8 +121,7 @@
 
 
     controller.on('usermove:drag', e => {
-        if (!e.isPrimary) return;
-
+        // if (!e.isPrimary) return;
         if (window.mode == 'draw') {
             ctx.fillStyle = 'yellow';
             ctx.fillRect(e.x, e.y, 2, 2);
@@ -138,7 +130,7 @@
             ctx.fillStyle = 'red';
             ctx.fillRect(e.start.x + Math.cos(delta.angle) * delta.distance, e.start.y + Math.sin(delta.angle) * delta.distance, 2, 2);
 
-
+            console.log("DIST", delta.distance)
         }
     });
 
