@@ -10,7 +10,7 @@
     "type": "git",
     "url": "git+https://github.com/hex13/usermove.git"
   },
-  "author": "= <=>",
+  "author": "Łukasz Lityński",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/hex13/usermove/issues"
