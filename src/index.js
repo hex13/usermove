@@ -5,15 +5,22 @@ export class Controller {
         this.opts = opts;
         this.pointers = {};
     }
+    createPointerInfo(e, isDown) {
+        return {start: e, last: e, isDown};
+    }
     init() {
         this.on('touchmove', e => {
             e.domEvent.preventDefault();
         });
         this.on('pointerdown', e => {
-            this.pointers[e.domEvent.pointerId] = {start: e, last: e, isDown: true};
+            const pointerInfo = this.createPointerInfo(e, true);
+            this.pointers[e.domEvent.pointerId] = pointerInfo;
+            return pointerInfo;
         });
         this.on('pointermove', e => {
-            const pointerInfo = this.pointers[e.domEvent.pointerId];
+            let pointerInfo = this.pointers[e.domEvent.pointerId];
+            if (!pointerInfo) pointerInfo = this.createPointerInfo(e, false);
+
             const pointerCount = Object.keys(this.pointers).length;
             pointerInfo.current = e;
             if (!pointerInfo.isDown) return;
